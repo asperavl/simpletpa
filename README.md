@@ -1,5 +1,5 @@
 # SimpleTPA Plugin
-**SimpleTPA** is a Minecraft Paper 1.21.8 plugin that implements teleport request functionality. Players can request to teleport to other players, and those requests must be explicitly accepted. Requests automatically expire after a configurable amount of time (default 2 minutes).
+**SimpleTPA** is a Minecraft Paper 1.21.10 plugin that implements teleport request functionality. Players can request to teleport to other players, and those requests must be explicitly accepted. Requests automatically expire after a configurable amount of time (default 2 minutes).
 
 ## Features
 - Send teleport requests to other players with `/tpa <player>`
@@ -42,11 +42,10 @@ allow-cross-world: false
 - `simpletpa.tpdeny`: Allows use of the `/tpdeny` command (default: true)
 - `simpletpa.tpacancel`: Allows use of the `/tpacancel` command (default: true)
 
-## Usage
+## Example Usage
 1. Player A sends a teleport request: `/tpa PlayerB`
 2. Player B receives a notification and can accept with: `/tpaccept PlayerA`
 3. If Player B doesn't respond within the configured timeout, the request expires automatically
-4. Both players must be in the same dimension (Overworld, Nether, or End)
 
 ## Support Me
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K3K715TC1R)

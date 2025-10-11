@@ -45,7 +45,11 @@ public final class SimpleTPA extends JavaPlugin {
         Objects.requireNonNull(getCommand("tpdeny")).setTabCompleter(this);
         Objects.requireNonNull(getCommand("tpacancel")).setExecutor(this);
         Objects.requireNonNull(getCommand("tpacancel")).setTabCompleter(this);
-        
+
+        // Initialise bStats
+        int pluginId = 27552;
+        new Metrics(this, pluginId);
+
         getLogger().info("SimpleTPA has been enabled.");
     }
 

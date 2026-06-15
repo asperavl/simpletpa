@@ -86,6 +86,7 @@ public class TpacceptCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        requestManager.savePreTPLocation(requester.getUniqueId(), requester.getLocation());
         requester.teleport(player.getLocation());
 
         requester.sendMessage(Component.text("Teleported to ").color(NamedTextColor.GREEN)

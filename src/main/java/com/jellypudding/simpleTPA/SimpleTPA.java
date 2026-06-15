@@ -3,7 +3,9 @@ package com.jellypudding.simpleTPA;
 import com.jellypudding.simpleTPA.commands.TpaCommand;
 import com.jellypudding.simpleTPA.commands.TpacancelCommand;
 import com.jellypudding.simpleTPA.commands.TpacceptCommand;
+import com.jellypudding.simpleTPA.commands.TpbackCommand;
 import com.jellypudding.simpleTPA.commands.TpdenyCommand;
+import com.jellypudding.simpleTPA.listeners.PlayerStateListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
@@ -18,6 +20,7 @@ public final class SimpleTPA extends JavaPlugin {
         requestManager = new RequestManager(this);
 
         registerCommands();
+        getServer().getPluginManager().registerEvents(new PlayerStateListener(requestManager), this);
 
         new Metrics(this, 27552);
 
@@ -37,6 +40,7 @@ public final class SimpleTPA extends JavaPlugin {
         TpacceptCommand tpaccept = new TpacceptCommand(requestManager);
         TpdenyCommand tpdeny = new TpdenyCommand(requestManager);
         TpacancelCommand tpacancel = new TpacancelCommand(requestManager);
+        TpbackCommand tpback = new TpbackCommand(this, requestManager);
 
         Objects.requireNonNull(getCommand("tpa")).setExecutor(tpa);
         Objects.requireNonNull(getCommand("tpa")).setTabCompleter(tpa);
@@ -46,6 +50,8 @@ public final class SimpleTPA extends JavaPlugin {
         Objects.requireNonNull(getCommand("tpdeny")).setTabCompleter(tpdeny);
         Objects.requireNonNull(getCommand("tpacancel")).setExecutor(tpacancel);
         Objects.requireNonNull(getCommand("tpacancel")).setTabCompleter(tpacancel);
+        Objects.requireNonNull(getCommand("tpback")).setExecutor(tpback);
+        Objects.requireNonNull(getCommand("tpback")).setTabCompleter(tpback);
     }
 
     public RequestManager getRequestManager() {

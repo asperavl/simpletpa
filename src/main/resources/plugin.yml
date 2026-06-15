@@ -3,8 +3,8 @@ version: '${version}'
 main: com.jellypudding.simpleTPA.SimpleTPA
 api-version: '26.1.2'
 description: "Implements simple TPA commands with 2-minute request timeouts"
-author: AlphaAlex115
-website: www.minecraftoffline.net
+authors: [AlphaAlex115, asperavl]
+website: https://github.com/asperavl/simpletpa
 
 commands:
   tpa:
@@ -23,6 +23,10 @@ commands:
     description: Cancel your own teleport request
     usage: /tpacancel [player|all]
     permission: simpletpa.tpacancel
+  tpback:
+    description: Teleport back to your location before your last TPA
+    usage: /tpback
+    permission: simpletpa.tpback
 
 permissions:
   simpletpa.tpa:
@@ -36,4 +40,7 @@ permissions:
     default: true
   simpletpa.tpacancel:
     description: Allows players to cancel their own teleport requests
+    default: true
+  simpletpa.tpback:
+    description: Allows players to return to their pre-teleport location
     default: true

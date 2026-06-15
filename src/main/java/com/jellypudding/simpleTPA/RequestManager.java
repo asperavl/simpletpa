@@ -3,6 +3,7 @@ package com.jellypudding.simpleTPA;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -17,9 +18,21 @@ public class RequestManager {
     private final HashMap<String, BukkitTask> expirationTasks = new HashMap<>();
     private final HashMap<UUID, Long> cooldowns = new HashMap<>();
 
+    // tpback state
+    private final HashMap<UUID, Location> preTPLocations = new HashMap<>();
+    private final HashMap<UUID, Long> preTPTimestamps = new HashMap<>();
+    private final HashMap<UUID, Long> tpbackCooldowns = new HashMap<>();
+    private final HashMap<UUID, BukkitTask> pendingTpbacks = new HashMap<>();
+
     private long requestTimeoutTicks;
     private long requestCooldownMillis;
     private boolean allowCrossWorld;
+
+    // tpback config
+    private long tpbackCooldownMillis;
+    private long tpbackExpiryMillis;
+    private boolean tpbackClearOnDeath;
+    private int tpbackWarmupTicks;
 
     public RequestManager(SimpleTPA plugin) {
         this.plugin = plugin;
@@ -35,7 +48,20 @@ public class RequestManager {
 
         allowCrossWorld = plugin.getConfig().getBoolean("allow-cross-world", false);
 
-        plugin.getLogger().info("Config loaded: timeout=" + timeoutSeconds + "s, cooldown=" + cooldownSeconds + "s, cross-world=" + allowCrossWorld);
+        int tpbackCooldownSeconds = plugin.getConfig().getInt("tpback-cooldown", 30);
+        tpbackCooldownMillis = tpbackCooldownSeconds * 1000L;
+
+        int tpbackExpirySeconds = plugin.getConfig().getInt("tpback-expiry", 300);
+        tpbackExpiryMillis = tpbackExpirySeconds * 1000L;
+
+        tpbackClearOnDeath = plugin.getConfig().getBoolean("tpback-clear-on-death", true);
+
+        int warmupSeconds = plugin.getConfig().getInt("tpback-warmup", 3);
+        tpbackWarmupTicks = warmupSeconds * 20;
+
+        plugin.getLogger().info("Config loaded: timeout=" + timeoutSeconds + "s, cooldown=" + cooldownSeconds + "s, cross-world=" + allowCrossWorld
+                + ", tpback-cooldown=" + tpbackCooldownSeconds + "s, tpback-expiry=" + tpbackExpirySeconds + "s"
+                + ", tpback-warmup=" + warmupSeconds + "s");
     }
 
     public void shutdown() {
@@ -43,6 +69,11 @@ public class RequestManager {
         teleportRequests.clear();
         expirationTasks.clear();
         cooldowns.clear();
+        pendingTpbacks.values().forEach(BukkitTask::cancel);
+        pendingTpbacks.clear();
+        preTPLocations.clear();
+        preTPTimestamps.clear();
+        tpbackCooldowns.clear();
     }
 
     public boolean hasRequest(String requestKey) {
@@ -132,5 +163,93 @@ public class RequestManager {
 
     public boolean isAllowCrossWorld() {
         return allowCrossWorld;
+    }
+
+    // -------------------------------------------------------------------------
+    // tpback — location saving
+    // -------------------------------------------------------------------------
+
+    public void savePreTPLocation(UUID playerUUID, Location location) {
+        preTPLocations.put(playerUUID, location);
+        preTPTimestamps.put(playerUUID, System.currentTimeMillis());
+    }
+
+    /**
+     * Returns the saved pre-TP location, or null if it has expired or was never set.
+     * Lazily removes expired entries.
+     */
+    public Location getPreTPLocation(UUID playerUUID) {
+        if (!preTPLocations.containsKey(playerUUID)) return null;
+        if (tpbackExpiryMillis > 0) {
+            long savedAt = preTPTimestamps.getOrDefault(playerUUID, 0L);
+            if (System.currentTimeMillis() - savedAt > tpbackExpiryMillis) {
+                preTPLocations.remove(playerUUID);
+                preTPTimestamps.remove(playerUUID);
+                return null;
+            }
+        }
+        return preTPLocations.get(playerUUID);
+    }
+
+    /** Removes the saved location — call this on successful tpback to enforce one-use. */
+    public void consumePreTPLocation(UUID playerUUID) {
+        preTPLocations.remove(playerUUID);
+        preTPTimestamps.remove(playerUUID);
+    }
+
+    /** Removes the saved location without teleporting — call on death (if configured) or quit. */
+    public void clearPreTPLocation(UUID playerUUID) {
+        preTPLocations.remove(playerUUID);
+        preTPTimestamps.remove(playerUUID);
+    }
+
+    // -------------------------------------------------------------------------
+    // tpback — cooldown
+    // -------------------------------------------------------------------------
+
+    public boolean hasTpbackCooldown(UUID playerUUID, long now) {
+        Long expiry = tpbackCooldowns.get(playerUUID);
+        return expiry != null && now < expiry;
+    }
+
+    public long getTpbackCooldownExpiry(UUID playerUUID) {
+        return tpbackCooldowns.getOrDefault(playerUUID, 0L);
+    }
+
+    public void setTpbackCooldown(UUID playerUUID, long expiresAt) {
+        tpbackCooldowns.put(playerUUID, expiresAt);
+    }
+
+    // -------------------------------------------------------------------------
+    // tpback — warmup task management
+    // -------------------------------------------------------------------------
+
+    public boolean hasPendingTpback(UUID playerUUID) {
+        return pendingTpbacks.containsKey(playerUUID);
+    }
+
+    public void storePendingTpback(UUID playerUUID, BukkitTask task) {
+        pendingTpbacks.put(playerUUID, task);
+    }
+
+    public void cancelPendingTpback(UUID playerUUID) {
+        BukkitTask task = pendingTpbacks.remove(playerUUID);
+        if (task != null) task.cancel();
+    }
+
+    // -------------------------------------------------------------------------
+    // tpback — config getters
+    // -------------------------------------------------------------------------
+
+    public long getTpbackCooldownMillis() {
+        return tpbackCooldownMillis;
+    }
+
+    public boolean isTpbackClearOnDeath() {
+        return tpbackClearOnDeath;
+    }
+
+    public int getTpbackWarmupTicks() {
+        return tpbackWarmupTicks;
     }
 }

@@ -8,3 +8,15 @@ request-cooldown: 10
 
 # Whether to allow cross-world teleportation
 allow-cross-world: false
+
+# Cooldown in seconds between /tpback uses
+tpback-cooldown: 30
+
+# Seconds before a saved tpback location expires (0 = never expires)
+tpback-expiry: 300
+
+# Whether to clear the saved tpback location when the player dies
+tpback-clear-on-death: true
+
+# Seconds to wait after /tpback before teleporting (0 = instant). Taking damage cancels it.
+tpback-warmup: 3
